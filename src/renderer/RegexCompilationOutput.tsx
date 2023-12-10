@@ -17,22 +17,19 @@ type Props = {
   output: CompilationOutput;
 };
 
-// eslint-disable-next-line consistent-return
 const outputColor = (output: CompilationOutput): string => {
-  // eslint-disable-next-line default-case
   switch (output.state) {
     case 'ok':
       return 'darkgreen';
     case 'empty':
       return 'lightgray';
-    case 'error':
+    default: // state === 'error'
       return 'darkred';
   }
 };
 
 const RegexCompilationOutputComponent = memo(({ output }: Props) => {
   let message: string;
-  // eslint-disable-next-line default-case
   switch (output.state) {
     case 'ok':
       message = 'ok';
@@ -44,9 +41,8 @@ const RegexCompilationOutputComponent = memo(({ output }: Props) => {
     case 'empty':
       message = '<compilation-output>';
       break;
-    case 'error':
+    default: // state === 'error'
       message = output.message;
-      break;
   }
 
   return (

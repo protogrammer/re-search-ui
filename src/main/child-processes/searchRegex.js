@@ -14,7 +14,7 @@ try {
   });
 } catch (e) {
   process.send({
-    state: e instanceof SyntaxError ? 'err' : 'internal-err',
+    state: e instanceof SyntaxError ? 'error' : 'internal-error',
     message: e.message,
   });
 }

@@ -1,5 +1,7 @@
 import React, { memo } from 'react';
 
+import type { FileInfo } from '../main/declarations';
+
 const RECURSION_LIMIT = 50_000;
 
 type HighlightedProps = {
@@ -54,24 +56,32 @@ const optimizeHighlitedMatches = (
 };
 
 type Props = {
-  text: string | { err: string } | null;
+  fileInfo: FileInfo;
   matches: [number, number][] | null;
 };
 
-const ContentTextComponent = memo(({ text, matches }: Props) => {
-  const textIsErr = text && typeof text === 'object' && 'err' in text;
+const textColor = (fileInfo: FileInfo) => {
+  switch (fileInfo.state) {
+    case 'opened':
+      return 'black';
+    case 'closed':
+      return 'lightgray';
+    default: // state === 'error'
+      return 'darkred';
+  }
+};
 
+const ContentTextComponent = memo(({ fileInfo, matches }: Props) => {
   return (
     <span
       className="content-text"
       style={{
-        // eslint-disable-next-line no-nested-ternary
-        color: text == null ? 'lightgray' : textIsErr ? 'darkred' : 'black',
+        color: textColor(fileInfo),
       }}
     >
-      {text != null ? (
+      {fileInfo.state !== 'closed' ? (
         <HighlightedComponent
-          text={textIsErr ? text.err : text}
+          text={fileInfo.state === 'opened' ? fileInfo.text : fileInfo.message}
           matches={optimizeHighlitedMatches(matches)}
           i={0}
         />

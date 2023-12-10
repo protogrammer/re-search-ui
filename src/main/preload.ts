@@ -1,22 +1,19 @@
 import { contextBridge, ipcRenderer, IpcRendererEvent } from 'electron';
-
-export type RegexResult =
-  | { state: 'ok'; matches: [number, number][] | null }
-  | { state: 'err'; message: string };
-export type OpenFileCbArg = [{ ok: string | null } | { err: string }, string];
-const chanRegexMenuOpenFile = 'regex-menu-open-file';
+import {
+  type FileInfo,
+  type RegexResult,
+  regexMenuOpenFile,
+  searchRegex,
+} from './declarations';
 
 const electronHandler = {
-  onFileOpen(callback: (value: OpenFileCbArg) => void) {
-    const subscription = (
-      _event: IpcRendererEvent,
-      [value, path]: OpenFileCbArg,
-    ) => {
-      callback([value, path]);
+  onFileOpen(callback: (value: FileInfo) => void) {
+    const subscription = (_event: IpcRendererEvent, fileInfo: FileInfo) => {
+      callback(fileInfo);
     };
-    ipcRenderer.on(chanRegexMenuOpenFile, subscription);
+    ipcRenderer.on(regexMenuOpenFile, subscription);
     return () => {
-      ipcRenderer.removeListener(chanRegexMenuOpenFile, subscription);
+      ipcRenderer.removeListener(regexMenuOpenFile, subscription);
     };
   },
   searchRegex(
@@ -24,7 +21,7 @@ const electronHandler = {
     flags: string,
     filename: string | null,
   ): Promise<RegexResult> {
-    return ipcRenderer.invoke('search-regex', [regexText, flags, filename]);
+    return ipcRenderer.invoke(searchRegex, regexText, flags, filename);
   },
 };
 

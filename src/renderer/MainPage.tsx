@@ -1,5 +1,7 @@
 import React, { useState, useEffect, memo } from 'react';
 
+import type { FileInfo } from '../main/declarations';
+
 import SearchRegexInputComponent from './SearchRegexInput';
 import RegexOptionsComponent, { RegexOptions } from './RegexOptions';
 import RegexCompilationOutputComponent from './RegexCompilationOutput';
@@ -10,10 +12,7 @@ import './MainPage.css';
 const MainPageComponent = memo(() => {
   const [regexText, setRegexText] = useState<string>('');
   const [matches, setMatches] = useState<[number, number][] | null>(null);
-  const [contentText, setContentText] = useState<
-    string | { err: string } | null
-  >(null);
-  const [filename, setFilename] = useState<string | null>(null);
+  const [fileInfo, setFileInfo] = useState<FileInfo>({ state: 'closed' });
   const [compilationOutput, setCompilationOutput] = useState<CompilationOutput>(
     {
       state: 'empty',
@@ -25,9 +24,8 @@ const MainPageComponent = memo(() => {
 
   useEffect(
     () =>
-      window.electron.onFileOpen(([value, newFilename]) => {
-        setContentText('err' in value ? value : value.ok);
-        setFilename(newFilename);
+      window.electron.onFileOpen((newFileInfo) => {
+        setFileInfo(newFileInfo);
       }),
     [],
   );
@@ -47,10 +45,10 @@ const MainPageComponent = memo(() => {
       const result = await window.electron.searchRegex(
         regexText,
         `dg${regexOptions}`,
-        filename,
+        fileInfo.state === 'closed' ? null : fileInfo.filepath,
       );
       if (canceled) return;
-      if (result.state === 'err') {
+      if (result.state === 'error') {
         setMatches(null);
         setCompilationOutput({
           state: 'error',
@@ -68,7 +66,7 @@ const MainPageComponent = memo(() => {
     return () => {
       canceled = true;
     };
-  }, [regexText, regexOptions, contentText, filename]);
+  }, [regexText, regexOptions, fileInfo]);
 
   return (
     <div className="main-page-div">
@@ -84,7 +82,7 @@ const MainPageComponent = memo(() => {
       </div>
       <div className="main-page-right-div">
         <RegexCompilationOutputComponent output={compilationOutput} />
-        <ContentTextComponent text={contentText} matches={matches} />
+        <ContentTextComponent fileInfo={fileInfo} matches={matches} />
       </div>
     </div>
   );

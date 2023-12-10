@@ -22,6 +22,7 @@ import log from 'electron-log';
 
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
+import { searchRegex, type RegexResult } from './declarations';
 
 class AppUpdater {
   constructor() {
@@ -134,8 +135,10 @@ app.on('window-all-closed', () => {
 
 const searchRegexHandler = (
   _event: IpcMainInvokeEvent,
-  [regexText, flags, filename]: [string, string, string | null],
-) =>
+  regexText: string,
+  flags: string,
+  filename: string | null,
+): Promise<RegexResult> =>
   new Promise((resolve, reject) => {
     console.log(__dirname);
     const child = fork(
@@ -146,16 +149,19 @@ const searchRegexHandler = (
       ),
       [regexText, flags, ...(filename != null ? [filename] : [])],
     );
-    child.on('message', (message: any) => {
-      if (message.state === 'internal-err') reject(message.message);
-      resolve(message);
-    });
+    child.on(
+      'message',
+      (message: RegexResult | { state: 'internal-error'; message: string }) => {
+        if (message.state === 'internal-error') reject(message.message);
+        else resolve(message);
+      },
+    );
   });
 
 app
   .whenReady()
   .then(() => {
-    ipcMain.handle('search-regex', searchRegexHandler);
+    ipcMain.handle(searchRegex, searchRegexHandler);
     createWindow();
     app.on('activate', () => {
       // On macOS it's common to re-create a window in the app when the

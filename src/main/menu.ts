@@ -1,25 +1,27 @@
 import { Menu, BrowserWindow, dialog } from 'electron';
 import { readFile } from 'fs';
 
+import { regexMenuOpenFile, type FileInfo } from './declarations';
+
 export default class MenuBuilder {
   mainWindow: BrowserWindow;
 
   async openFile() {
     const {
       canceled,
-      filePaths: [path],
+      filePaths: [filepath],
     } = await dialog.showOpenDialog({
       properties: ['openFile'],
     });
 
     if (canceled) return;
 
-    readFile(path, 'utf8', (err, content) => {
-      this.mainWindow.webContents.send('regex-menu-open-file', [
-        // eslint-disable-next-line object-shorthand
-        err == null ? { ok: content } : { err: err },
-        path,
-      ]);
+    readFile(filepath, 'utf8', (err, text) => {
+      const message: FileInfo =
+        err == null
+          ? { state: 'opened', text, filepath }
+          : { state: 'error', filepath, message: err.message };
+      this.mainWindow.webContents.send(regexMenuOpenFile, message);
     });
   }
 
@@ -72,10 +74,8 @@ export default class MenuBuilder {
             label: '&Close',
             accelerator: 'Ctrl+W',
             click: () => {
-              this.mainWindow.webContents.send('regex-menu-open-file', [
-                { ok: null },
-                null,
-              ]);
+              const message: FileInfo = { state: 'closed' };
+              this.mainWindow.webContents.send(regexMenuOpenFile, message);
             },
           },
           {
