@@ -2,7 +2,7 @@ import React, { memo } from 'react';
 
 import type { FileInfo } from '../main/declarations';
 
-const RECURSION_LIMIT = 50_000;
+const RECURSION_LIMIT = 40_000;
 
 type HighlightedProps = {
   text: string;
@@ -36,18 +36,35 @@ const HighlightedComponent = ({ text, matches, i }: HighlightedProps) => {
   );
 };
 
+const invisibleCharacters = '\n\r';
+
+const sliceIsInvisible = (
+  text: string,
+  start: number,
+  limit: number,
+): boolean => {
+  for (let i = start; i < limit; i += 1)
+    if (!invisibleCharacters.includes(text[i])) return false;
+  return true;
+};
+
 const optimizeHighlitedMatches = (
   matches: [number, number][] | null,
+  text: string,
 ): [number, number][] | null => {
   return (
     matches &&
     matches.reduce(
       (acc, [start, end]) => {
-        if (acc.length !== 0 && acc[acc.length - 1][1] === start) {
-          acc[acc.length - 1][1] = end;
-        } else if (start !== end) {
-          acc.push([start, end]);
+        if (start === end) return acc;
+        if (acc.length !== 0) {
+          const prevEnd = acc[acc.length - 1][1];
+          if (prevEnd === start || sliceIsInvisible(text, prevEnd, start)) {
+            acc[acc.length - 1][1] = end;
+            return acc;
+          }
         }
+        acc.push([start, end]);
         return acc;
       },
       [] as [number, number][],
@@ -82,7 +99,11 @@ const ContentTextComponent = memo(({ fileInfo, matches }: Props) => {
       {fileInfo.state !== 'closed' ? (
         <HighlightedComponent
           text={fileInfo.state === 'opened' ? fileInfo.text : fileInfo.message}
-          matches={optimizeHighlitedMatches(matches)}
+          matches={
+            fileInfo.state === 'opened'
+              ? optimizeHighlitedMatches(matches, fileInfo.text)
+              : []
+          }
           i={0}
         />
       ) : (
