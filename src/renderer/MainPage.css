@@ -1,0 +1,67 @@
+:root {
+  --main-page-div-width: 100%;
+  --main-page-left-div-width: 25%;
+  --main-page-right-div-width: calc(var(--main-page-div-width) - var(--main-page-left-div-width));
+  --top-elements-margin: 0.2vh;
+  --top-elements-height: 35px;
+  --body-margin: 5px;
+  --usual-margin-top: 0.5em;
+}
+
+body {
+  margin: var(--body-margin);
+}
+
+.main-page-div {
+  display: inline-flex;
+  width: var(--main-page-div-width);
+}
+
+.main-page-left-div {
+  display: grid;
+  grid-auto-rows: min-content;
+  width: var(--main-page-left-div-width);
+}
+
+.main-page-right-div {
+  display: grid;
+  grid-auto-rows: min-content;
+  width: var(--main-page-right-div-width);
+}
+
+.search-regex {
+  height: var(--top-elements-height);
+  border: none;
+  margin-top: var(--top-elements-margin);
+  margin-bottom: var(--top-elements-margin);
+}
+
+.compilation-output {
+  height: var(--top-elements-height);
+  border: none;
+  margin-top: var(--top-elements-margin);
+  margin-bottom: var(--top-elements-margin);
+}
+
+.regex-options {
+  border: none;
+}
+
+.regex-option {
+  margin-top: var(--usual-margin-top);
+  margin-bottom: 0;
+}
+
+.content-text {
+  margin-top: var(--usual-margin-top);
+  border: none;
+  font-family: monospace;
+  white-space: pre;
+  overflow-y: scroll;
+  height: calc(100vh - var(--top-elements-height) - var(--usual-margin-top) - 2 * var(--body-margin) - 2 * var(--top-elements-margin));
+}
+
+.highlited-text {
+  color: red;
+  background-color: rgba(255, 192, 203, 0.45);
+}

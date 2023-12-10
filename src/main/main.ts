@@ -9,9 +9,17 @@
  * `./src/main.js` using webpack. This gives us some performance wins.
  */
 import path from 'path';
-import { app, BrowserWindow, shell, ipcMain } from 'electron';
+import { fork } from 'child_process';
+import {
+  app,
+  BrowserWindow,
+  ipcMain,
+  shell,
+  IpcMainInvokeEvent,
+} from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
+
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
 
@@ -24,12 +32,6 @@ class AppUpdater {
 }
 
 let mainWindow: BrowserWindow | null = null;
-
-ipcMain.on('ipc-example', async (event, arg) => {
-  const msgTemplate = (pingPong: string) => `IPC test: ${pingPong}`;
-  console.log(msgTemplate(arg));
-  event.reply('ipc-example', msgTemplate('pong'));
-});
 
 if (process.env.NODE_ENV === 'production') {
   const sourceMapSupport = require('source-map-support');
@@ -112,6 +114,12 @@ const createWindow = async () => {
   new AppUpdater();
 };
 
+/** *
+ * Increase stack size
+ */
+
+app.commandLine.appendSwitch('js-flags', '--stack-size=10000');
+
 /**
  * Add event listeners...
  */
@@ -124,9 +132,30 @@ app.on('window-all-closed', () => {
   }
 });
 
+const searchRegexHandler = (
+  _event: IpcMainInvokeEvent,
+  [regexText, flags, filename]: [string, string, string | null],
+) =>
+  new Promise((resolve, reject) => {
+    console.log(__dirname);
+    const child = fork(
+      path.join(
+        isDebug ? __dirname : process.resourcesPath,
+        'child-processes',
+        'searchRegex.js',
+      ),
+      [regexText, flags, ...(filename != null ? [filename] : [])],
+    );
+    child.on('message', (message: any) => {
+      if (message.state === 'internal-err') reject(message.message);
+      resolve(message);
+    });
+  });
+
 app
   .whenReady()
   .then(() => {
+    ipcMain.handle('search-regex', searchRegexHandler);
     createWindow();
     app.on('activate', () => {
       // On macOS it's common to re-create a window in the app when the
