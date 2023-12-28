@@ -140,7 +140,6 @@ const searchRegexHandler = (
   filename: string | null,
 ): Promise<RegexResult> =>
   new Promise((resolve, reject) => {
-    console.log(__dirname);
     const child = fork(
       path.join(
         isDebug ? __dirname : process.resourcesPath,
